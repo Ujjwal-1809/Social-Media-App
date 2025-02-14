@@ -134,7 +134,7 @@ export async function forgotPassword(req, res) {
         await user.save();
 
         // Send email with reset link
-        const resetLink = `https://67af1543836d7a1dfda42acc--bespoke-fudge-fb649f.netlify.app/reset-password/${resetToken}`;
+        const resetLink = `https://67af1c01be350200082a8113--clinquant-daifuku-1623f6.netlify.app/reset-password/${resetToken}`;
         const mailOptions = {
             from: `Social-media-app ${process.env.EMAIL_USER}`,
             to: user.email,
