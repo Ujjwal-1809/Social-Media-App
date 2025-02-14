@@ -1,6 +1,6 @@
 # PostIT
 
-A modern and responsive **social media application** built using the **MERN stack**. Users can create accounts, log in, post content, and interact with posts in real-time.
+A modern and responsive **social media application** built using the **MERN stack**. Users can create accounts, log in, post content, and interact with posts through likes and comments.
 
 ## Technologies Used
 
