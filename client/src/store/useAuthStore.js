@@ -9,12 +9,6 @@ export const useAuthStore = create((set) => ({
     isCheckingAuth: true,
     checkAuth: async () => {
         try {
-            const token = document.cookie.includes("token"); // Check if token exists
-            if (!token) {
-                set({ authUser: null, isCheckingAuth: false });
-                return;
-            }
-
             const res = await axiosInstance.get('/auth/check')
             set({ authUser: res.data });
 
