@@ -15,7 +15,7 @@ app.use(express.json({ limit: "10mb" }));
 app.use(cookieParser());
 
 app.use(cors({
-    origin: "http://localhost:5173",
+    origin: "https://67af0b3fe14ac946cba92724--brilliant-belekoy-9056e5.netlify.app",
     credentials: true
 }))
 app.use('/auth', authRoutes);
