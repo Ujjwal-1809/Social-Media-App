@@ -96,13 +96,19 @@ export async function handleLogin(req, res) {
 }
 
 export function handleLogout(req, res) {
-try {
-res.cookie("token", "", {maxAge:0})
-res.status(200).json({ message: "Logged out successfully" })
-} catch (error) {
-    console.log("error in logout controller", error.message);
-        res.status(500).json({ message: "Internal server error" })
-}}
+    try {
+        res.clearCookie("token", {
+            httpOnly: true,
+            secure: true, 
+            sameSite: "none" 
+        });
+
+        res.status(200).json({ message: "Logged out successfully" });
+    } catch (error) {
+        console.log("Error in logout controller:", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
 
 
 
