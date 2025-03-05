@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from "react";
-import {  useNavigate, useParams } from "react-router-dom";
+import {  Link, useNavigate, useParams } from "react-router-dom";
 import { usePostStore } from "../store/usePostStore";
 import toast from "react-hot-toast";
 import { Loader2 } from "lucide-react";
-import Navbar from "./Navbar";
-
+import useThemeStore from '../store/useThemeStore'
+ 
 const EditPost = () => {
   const { posts, updatePost, getPosts, isUpdatingPost } = usePostStore();
   const { postId } = useParams();
   const navigate = useNavigate();
-
   const [content, setContent] = useState("");
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
+  const { theme } = useThemeStore()
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -68,16 +68,18 @@ const EditPost = () => {
   };
 
   return (
-  <div>
+  <div className="h-screen xl:h-auto pb-1">
 
-<Navbar/>
+<nav className={`${theme === 'dark' ? 'bg-black text-white border-b border-slate-700' : 'bg-white'} h-16 w-full flex justify-between items-center shadow-lg`}>
+<Link to='/' className='ml-[2%] text-2xl cursor-pointer font-bold'><i className="fa-solid fa-house"></i></Link>
+     </nav>
 
-      <div className="w-[90%] sm:w-[50%] mx-auto m-10 p-6 bg-white shadow-2xl rounded-lg">
+      <div className={`${theme === 'dark' ? 'bg-black border border-slate-700 text-white' : 'bg-white'} w-[90%] md:w-[70%] xl:w-[50%] mx-auto m-10 p-6 shadow-2xl rounded-lg`}>
       <h2 className="text-2xl font-bold mb-4 text-center">Edit Post</h2>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <textarea
-          className="w-full p-3 border rounded-lg"
+          className="w-full p-3 border rounded-lg outline-2 -outline-offset-1 outline-slate-700 focus:outline-2 focus:-outline-offset-2 focus:outline-blue-400"
           placeholder="Update your post..."
           value={content}
           onChange={(e) => setContent(e.target.value)}
@@ -94,7 +96,7 @@ const EditPost = () => {
           </div>
         )}
 
-        <input className="border p-1.5 cursor-pointer rounded-xl hover:bg-slate-200" type="file" accept="image/*" onChange={handleImageChange} />
+        <input className={`${theme === 'dark' ? 'hover:bg-slate-900' : 'hover:bg-slate-200'} border p-1.5 cursor-pointer rounded-xl`} type="file" accept="image/*" onChange={handleImageChange} />
 
         <button type="submit" className="cursor-pointer flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
           disabled={isUpdatingPost}>

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import useThemeStore from "../store/useThemeStore";
 
 export default function Login() {
 
@@ -11,9 +12,8 @@ export default function Login() {
         password: "",
     });
     const [showPassword, setShowPassword] = useState(false);
-
-
     const { signup, isSigningUp } = useAuthStore();
+    const { theme } = useThemeStore()
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -22,11 +22,32 @@ export default function Login() {
 
     return (
         <>
-            <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
-                <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-                <i className="fa-solid fa-camera text-center w-full text-4xl text-blue-700"></i>
+            <div className={`${theme === 'dark' ? 'text-white' : 'text-gray-900'} flex h-screen flex-1 flex-col justify-start pb-5 p-4`}>
+                <h1 className="flex items-center gap-x-3 text-xl sm:text-3xl font-extrabold font-serif text-white drop-shadow-lg tracking-wide">
+                    <span className="bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+                        ConnectMe
+                    </span>
+                    <i
+                        className="fa-solid fa-earth-americas text-xl sm:text-3xl"
+                        style={{
+                            animation: "colorPulse 2s infinite ease-in-out",
+                        }}
+                    ></i>
 
-                    <h2 className="mt-10 text-center text-2xl/9 font-bold tracking-tight text-gray-900">
+                    {/* Define keyframes directly inside JSX */}
+                    <style>
+                        {`
+      @keyframes colorPulse {
+        0% { color: #008000; }  
+        50% { color: #1e90ff; } 
+        100% { color: #008000; } 
+      }
+    `}
+
+                    </style>
+                </h1>
+                <div className="sm:mx-auto sm:w-full sm:max-w-sm">
+                    <h2 className={`${theme === "dark" ? 'text-white' : 'text-gray-900'} mt-10 text-center text-2xl/9 font-bold tracking-tight`}>
                         Create your account
                     </h2>
                 </div>
@@ -34,7 +55,7 @@ export default function Login() {
                 <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
-                            <label htmlFor="username" className="block text-sm/6 font-medium text-gray-900">
+                            <label htmlFor="username" className="block text-sm/6 font-medium">
                                 Username
                             </label>
                             <div className="mt-2">
@@ -44,15 +65,15 @@ export default function Login() {
                                     type="username"
                                     placeholder="John_Doe"
                                     required
-                                    autoComplete="username"
+                                    autoComplete="off"
                                     value={formData.username}
                                     onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                                    className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
+                                    className={`${theme === 'dark' ? 'text-gray-100 bg-black' : 'text-gray-900 bg-white'} block w-full rounded-md px-3 py-1.5 text-base outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6`}
                                 />
                             </div>
                         </div>
                         <div>
-                            <label htmlFor="email" className="block text-sm/6 font-medium text-gray-900">
+                            <label htmlFor="email" className="block text-sm/6 font-medium">
                                 Email
                             </label>
                             <div className="mt-2">
@@ -62,17 +83,17 @@ export default function Login() {
                                     placeholder="example12@gmail.com"
                                     type="email"
                                     required
-                                    autoComplete="email"
+                                    autoComplete="off"
                                     value={formData.email}
                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                    className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
+                                    className={`${theme === 'dark' ? 'text-gray-100 bg-black' : 'text-gray-900 bg-white'} block w-full rounded-md px-3 py-1.5 text-base outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6`}
                                 />
                             </div>
                         </div>
 
                         <div>
                             <div className="flex items-center justify-between">
-                                <label htmlFor="password" className="block text-sm/6 font-medium text-gray-900">
+                                <label htmlFor="password" className="block text-sm/6 font-medium">
                                     Password
                                 </label>
 
@@ -84,22 +105,22 @@ export default function Login() {
                                     required
                                     type={showPassword ? "text" : "password"}
                                     placeholder="••••••••"
-                                    autoComplete="current-password"
+                                    autoComplete="off"
                                     value={formData.password}
                                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                    className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
+                                    className={`${theme === 'dark' ? 'text-gray-100 bg-black' : 'text-gray-900 bg-white'} block w-full rounded-md px-3 py-1.5 text-base outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6`}
                                 />
-                                  <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-base-content/40" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-base-content/40" />
-                  )}
-                </button>
+                                <button
+                                    type="button"
+                                    className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                >
+                                    {showPassword ? (
+                                        <EyeOff className={`${theme === 'dark' ? 'text-white' : 'text-slate-700'} h-5 w-5 text-base-content/40`} />
+                                    ) : (
+                                        <Eye className={`${theme === 'dark' ? 'text-white' : 'text-slate-700'} h-5 w-5 text-base-content/40`} />
+                                    )}
+                                </button>
                             </div>
                         </div>
 
@@ -109,7 +130,6 @@ export default function Login() {
                                 {isSigningUp ? (
                                     <>
                                         <Loader2 className="h-5 w-5 animate-spin" />
-                                        Loading...
                                     </>
                                 ) : (
                                     "Sign Up"
@@ -118,10 +138,10 @@ export default function Login() {
                         </div>
                     </form>
 
-                    <p className="mt-10 text-center text-sm/6 text-gray-500">
+                    <p className="mt-5 text-center text-sm/6 text-gray-500">
                         Already a member?{' '}
                         <Link to="/login" className="font-semibold text-indigo-500 hover:text-indigo-600">
-                           Log In
+                            Log In
                         </Link>
                     </p>
                 </div>

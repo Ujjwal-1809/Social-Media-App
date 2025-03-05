@@ -1,13 +1,13 @@
 import { create } from "zustand";
 import { axiosInstance } from '../lib/axios.js'
 import toast from 'react-hot-toast'
+import { socket } from "../lib/socket.js";
 
 export const usePostStore = create((set) => ({
     posts: [],
     isCreatingPost: false,
     isLoadingPosts: false,
     isUpdatingPost: false,
-
 
     createPost: async (postData) => {
         try {
@@ -29,7 +29,7 @@ export const usePostStore = create((set) => ({
             set({ isCreatingPost: false });
         }
     },
-
+ 
     getPosts: async () => {
         try {
           const res = await axiosInstance.get("/post/view-posts");
@@ -67,8 +67,6 @@ export const usePostStore = create((set) => ({
     deletePost: async (postId) => {
         try {
             const res = await axiosInstance.delete(`/post/${postId}`);
-    
-            
             set((state) => ({
                 posts: state.posts.filter((post) => post._id !== postId),
             }));
@@ -82,22 +80,24 @@ export const usePostStore = create((set) => ({
     },
     
     likePost: async (postId) => {
-        try {
+      try {
           const { data } = await axiosInstance.put(`/post/like/${postId}`, {}, { withCredentials: true });
+  
           set((state) => ({
-            posts: state.posts.map((post) =>
-              post._id === postId
-                ? { ...post, likes: Array.isArray(data.likes) ? data.likes : [] }
-                : post
-            ),
+              posts: state.posts.map((post) =>
+                  post._id === postId
+                      ? { ...post, likes: Array.isArray(data.likes) ? data.likes : post.likes } // Preserve existing comments
+                      : post
+              ),
           }));
-          
+  
           return data.liked;
-        } catch (error) {
-          console.error(error);
+      } catch (error) {
+          console.error("Error liking post:", error);
           return false;
-        }
-      },
+      }
+  },
+  
 
       addComment: async (postId, text) => {
         try {
@@ -111,4 +111,24 @@ export const usePostStore = create((set) => ({
           console.error("Error adding comment:", error);
         }
       },
+       // Subscribe to real-time updates from Socket.io
+       subscribeToUpdates: () => {
+        socket.on("postUpdated", ({ postId, likes, comments }) => {
+          set((state) => ({
+              posts: state.posts.map((post) =>
+                  post._id === postId
+                      ? { 
+                          ...post, 
+                          likes: likes || post.likes, 
+                          comments: comments !== undefined ? comments : post.comments // Only update comments if they exist
+                        }
+                      : post
+              ),
+          }));
+      });
+      
+    },
+    
 }));
+// Initialize real-time updates when Zustand store is loaded
+usePostStore.getState().subscribeToUpdates();

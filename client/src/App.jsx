@@ -11,21 +11,38 @@ import ResetPassword from './pages/ResetPassword.jsx';
 import CreatePost from './components/CreatePost.jsx';
 import ViewPosts from './components/ViewPosts.jsx';
 import EditPost from './components/EditPost.jsx';
+import Profile from './components/Profile.jsx';
+import { socket } from "./lib/socket.js";
+import useThemeStore  from './store/useThemeStore.js';
 
 
 function App() {
   const { authUser, checkAuth, isCheckingAuth } = useAuthStore();  
+  const { theme } = useThemeStore();
+
+  if(theme === 'dark'){
+    document.body.style.backgroundColor = "black"
+  }
+  else{
+    document.body.style.backgroundColor = "white"
+
+  }
 
   useEffect(() => {
     checkAuth()
    }, [checkAuth]);
+
+   useEffect(() => {
+    socket.connect();
+    return () => socket.disconnect();
+}, []);
   
-   if (isCheckingAuth && !authUser) { // means till the time it is checked whether the user is authenticated or not, the loader should be displayed.
-    return <div className='flex justify-center items-center h-screen'>
-      <Loader className='size-10 animate-spin'/>
-     </div>
-    }
-    return <div>
+      if (isCheckingAuth && !authUser) { // means till the time it is checked whether the user is authenticated or not, the loader should be displayed.
+       return <div className='flex justify-center items-center h-screen'>
+         <Loader className='size-10 animate-spin'/>
+        </div>
+       }
+return <div className={`transition-all duration-300 ${theme === "dark" ? "bg-black" : "bg-white"}`}>
     
     <Routes>
     
@@ -37,7 +54,7 @@ function App() {
     <Route path='/create' element={authUser ? <CreatePost/> : <Navigate to='/login' />} />
     <Route path='/view-posts' element={authUser ? <ViewPosts/> : <Navigate to='/login' />} />
     <Route path="/edit/:postId" element={authUser ? <EditPost /> : <Navigate to='/login' />} />
-
+    <Route path='/profile' element={authUser ? <Profile/> : <Navigate to='/login' />} />
 
     </Routes>
     
