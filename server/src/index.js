@@ -8,6 +8,7 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import http from 'http';
 import { setupSocket } from './lib/socket.js';
+import axios from 'axios'
 
 dotenv.config();
 const PORT = process.env.PORT;
