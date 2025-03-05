@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs'
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv'
+import cloudinary from '../lib/cloudinary.js'
 
 dotenv.config()
 
@@ -24,7 +25,9 @@ export async function handleSignup(req, res) {
         if (!username || !email || !password) {
             return res.status(400).json({ message: "All fields are required." });
         }
-
+        if (username.trim().length < 5) {
+            return res.status(400).json({ message: "Username must be atleast 5 characters." });
+        }
         if (password.trim().length < 8) {
             return res.status(400).json({ message: "Password must be atleast 8 characters." });
         }
@@ -56,6 +59,7 @@ export async function handleSignup(req, res) {
                 _id: newUser._id,
                 username: newUser.username,
                 email: newUser.email,
+                profileImg: newUser.profileImg
             })
         } else {
             res.status(400).json('Invalid User Data')
@@ -80,6 +84,7 @@ export async function handleLogin(req, res) {
                     _id: user._id,
                     username: user.username,
                     email: user.email,
+                    profileImg: user.profileImg
                 })
             }
             else {
@@ -108,18 +113,162 @@ export function handleLogout(req, res) {
         console.log("Error in logout controller:", error.message);
         res.status(500).json({ message: "Internal server error" });
     }
-}
+};
 
-
-
-export function checkAuth(req, res) {
+export async function updateProfilePic(req, res){
     try {
-        res.status(200).json(req.user)
+        const {profileImg} = req.body;
+        const userId = req.user._id; // got the .user from protectRoute, where we have added the user property.
+        if (!profileImg) {
+            return res.status(400).json({message: "Profile pic is required"})
+        }
+    
+        const uploadResponse = await cloudinary.uploader.upload(profileImg)
+        const updatedUser = await User.findByIdAndUpdate(userId, {profileImg: uploadResponse.secure_url},{new:true})
+    
+        return res.status(200).json(updatedUser)
     } catch (error) {
-        console.log("error in Check auth controller", error.message);
+        console.log("error in update profile controller", error.message);
         res.status(500).json({ message: "Internal server error" })
     }
+    };
+
+    export async function updateProfile(req, res) { 
+        try {
+            const { username, bio } = req.body;
+            const userId = req.user._id; 
+    
+            // Check if username is already taken by another user (excluding current user)
+            const existingUser = await User.findOne({ username });
+            
+            if (existingUser && existingUser._id.toString() !== userId.toString()) {
+                return res.status(400).json({ message: "Username already exists." });
+            }
+    
+            const updatedUser = await User.findByIdAndUpdate(
+                userId,
+                { username, bio },
+                { new: true } // Return updated user
+            );
+    
+            if (!updatedUser) return res.status(404).json({ message: "User not found" });
+    
+            res.json(updatedUser);
+        } catch (error) {
+            res.status(500).json({ message: "Error updating profile", error });
+        }
+    }
+    
+
+export async function handleFollow(req, res) {
+    try {
+        const { userId } = req.params; // User to follow
+        const authUserId = req.user.id; // Logged-in user
+
+        if (userId === authUserId) {
+            return res.status(400).json({ message: "You cannot follow yourself." });
+        }
+
+        const userToFollow = await User.findById(userId);
+        let authUser = await User.findById(authUserId);
+
+        if (!userToFollow || !authUser) {
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        if (!userToFollow.followers.includes(authUserId)) { // if current authenticated userId is not inside the followers list of searched user! 
+            userToFollow.followers.push(authUserId); // then push the authUserId into searched user's followers list.
+            authUser.following.push(userId); // push the searched user's Id into the following list of current autheticated user.
+
+            await userToFollow.save(); // save the changes in database.
+            await authUser.save();
+        } else {
+            return res.status(400).json({ message: "You already follow this user." });
+        }
+
+        // Re-fetch authUser with populated followers & following
+        authUser = await User.findById(authUserId)
+            .populate("followers", "username _id profileImg")
+            .populate("following", "username _id profileImg");
+
+        res.status(200).json({
+            message: "User followed successfully",
+            updatedAuthUser: authUser,
+            updatedFollowedUser: userToFollow,
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Error following user", error });
+    }
+};
+
+/* If we had populated authUser in the first query (before updating the lists and saving the changes),
+ we would still be working with the old data, meaning the following list wouldn’t include the newly 
+ followed user.
+
+By re-fetching and populating after saving, we ensure that:
+
+1. The authUser.following list includes the newly followed user.
+2. The authUser object returned to the frontend has the latest populated followers and following lists.
+
+So, the first findById is just to check and update, while the second findById().populate() ensures
+ we send the correct updated data back to the client. */
+
+  
+export async function handleUnfollow(req, res) {
+    try {
+        const { userId } = req.params;
+        const authUserId = req.user.id;
+
+        const userToUnfollow = await User.findById(userId);
+        let authUser = await User.findById(authUserId);
+
+        if (!userToUnfollow || !authUser) {
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        if (userToUnfollow.followers.includes(authUserId)) {
+            userToUnfollow.followers = userToUnfollow.followers.filter(id => id.toString() !== authUserId);
+            authUser.following = authUser.following.filter(id => id.toString() !== userId);
+
+            await userToUnfollow.save();
+            await authUser.save();
+        } else {
+            return res.status(400).json({ message: "You are not following this user." });
+        }
+
+        // Re-fetch authUser with populated followers & following
+        authUser = await User.findById(authUserId)
+            .populate("followers", "username _id profileImg")
+            .populate("following", "username _id profileImg");
+
+        res.status(200).json({
+            message: "User unfollowed successfully",
+            updatedAuthUser: authUser,
+            updatedUnfollowedUser: userToUnfollow,
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Error unfollowing user", error });
+    }
 }
+
+
+  export async function checkAuth(req, res) {
+    try {
+        const authUser = await User.findById(req.user._id)
+            .populate("followers", "username _id profileImg")
+            .populate("following", "username _id profileImg");
+
+        if (!authUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.status(200).json(authUser);
+    } catch (error) {
+        console.log("Error in Check Auth controller", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
 
 export async function forgotPassword(req, res) {
     try {
@@ -140,14 +289,40 @@ export async function forgotPassword(req, res) {
         await user.save();
 
         // Send email with reset link
-        const resetLink = `https://clinquant-daifuku-1623f6.netlify.app/reset-password/${resetToken}`;
+        const resetLink = `https://67c8c815ecf7d40008c50e0f--clinquant-daifuku-1623f6.netlify.app/reset-password/${resetToken}`;
         const mailOptions = {
-            from: `Social-media-app ${process.env.EMAIL_USER}`,
+            from: `ConnectMe <${process.env.EMAIL_USER}>`,
             to: user.email,
-            subject: 'Password Reset Request',
-            html: `<p>Click the link below to reset your password:</p>
-            <p><a href="${resetLink}" target="_blank" style="color: blue; text-decoration: underline;">Reset Password</a></p>
-            <p>If you didn't request this, please ignore this email.</p>`,       };
+            subject: "Reset Your Password - ConnectMe",
+            html: `
+            <div style="font-family: Arial, sans-serif; max-width: 500px; margin: auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #f9f9f9;">
+                <h2 style="color: #333; text-align: center;">Password Reset Request</h2>
+                <p style="color: #555; font-size: 16px;">
+                    Hello, 
+                </p>
+                <p style="color: #555; font-size: 16px;">
+                    We received a request to reset your password for your <strong>ConnectMe</strong> account. Click the button below to reset your password:
+                </p>
+                <div style="text-align: center; margin: 20px 0;">
+                    <a href="${resetLink}" target="_blank" 
+                       style="display: inline-block; padding: 12px 20px; font-size: 16px; color: #fff; background-color: #007BFF; 
+                              text-decoration: none; border-radius: 5px;">
+                        Reset Password
+                    </a>
+                </div>
+                <p style="color: #555; font-size: 16px;">
+                    If you didn't request this, you can safely ignore this email.
+                </p>
+                <p style="color: #777; font-size: 14px; text-align: center; margin-top: 20px;">
+                    This link will expire in 30 minutes for security reasons.
+                </p>
+                <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+                <p style="color: #777; font-size: 14px; text-align: center;">
+                    Need help? Contact our support team at <a href="mailto:support@connectme.com" style="color: #007BFF;">support@connectme.com</a>.
+                </p>
+            </div>`
+        };
+        
 
         await transporter.sendMail(mailOptions);
         res.status(200).json({ message: "Reset link sent to your email." });
@@ -193,3 +368,13 @@ export async function resetPassword(req, res) {
         res.status(500).json({ message: "Internal server error" });
     }
 };
+
+export const getUserList = async(req,res) => {
+    try {
+        const users = await User.find().select("-password"); // find all user except the current logged in user, because in the userlist we probably don't want our own name.
+        return res.status(200).json(users)
+    } catch (error) {
+        console.log("error in user list controller", error.message);
+        res.status(500).json({ message: "Internal server error" })
+    }
+    }

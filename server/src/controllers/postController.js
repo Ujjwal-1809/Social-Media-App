@@ -32,8 +32,8 @@ export const handleCreatePost = async (req, res) => {
 export const handleGetPost = async(req, res) => {
 
     try {
-        const posts = await Post.find().populate("createdBy", "username")
-        .populate("comments.userId", "username")
+        const posts = await Post.find().populate("createdBy", "username profileImg bio")
+        .populate("comments.userId", "username profileImg")
         .sort({ createdAt: -1 })  // Sort posts by newest first
 
         res.json(posts);
@@ -96,7 +96,7 @@ export const handleDeletePost = async (req, res) => {
             return res.status(403).json({ message: "Only the post owner can delete the post!" });
         }
 
-        await Post.deleteOne({ _id: postId }); // More optimized deletion
+        await Post.deleteOne({ _id: postId });
         res.json({ message: "Post deleted successfully!" });
     } catch (error) {
         console.error("Error deleting Post:", error);
@@ -105,34 +105,37 @@ export const handleDeletePost = async (req, res) => {
 };
 
 export const handleLikedPost = async (req, res) => {
-    try {
+  try {
       const { postId } = req.params;
-      const userId = req.user.id;
-  
+      const userId = req.user._id;
       const post = await Post.findById(postId);
-      if (!post) return res.status(404).json({ message: "Post not found" });
-  
-      // Ensure likes field is an array
-      if (!Array.isArray(post.likes)) {
-        post.likes = [];
-      }
-  
-      // Toggle like
-      const index = post.likes.indexOf(userId);
-      if (index === -1) {
-        post.likes.push(userId);
-      } else {
-        post.likes.splice(index, 1);
-      }
-  
-      await post.save();
-      res.status(200).json({ likes: post.likes.length, liked: index === -1 });
-    } catch (error) {
-      res.status(500).json({ message: "Server error" });
-    }
-  };
 
-  export const handlePostComments =async (req, res) => {
+      if (!post) {
+          return res.status(404).json({ message: "Post not found" });
+      }
+
+      const isLiked = post.likes.includes(userId); //checks if the user has already liked the post.
+
+      if (isLiked) {
+          post.likes = post.likes.filter(id => id.toString() !== userId.toString()); // post.likes is an array storing user IDs who have liked the post and this line basically removes the current authenticated userId who liked the post while rest userIds stays. 
+      } else {
+          post.likes.push(userId);
+      } // If the user already liked the post → Remove their like and vice-versa.
+
+      await post.save();
+
+      // Emit real-time update
+      req.io.emit("postUpdated", { postId, likes: post.likes });
+
+      return res.json({ likes: post.likes, liked: !isLiked });
+  } catch (error) {
+      console.error("Error liking post:", error);
+      res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+
+  export const handlePostComments = async (req, res) => {
     try {
       const { postId } = req.params;
       const { text } = req.body;
@@ -154,9 +157,11 @@ export const handleLikedPost = async (req, res) => {
   
       // Populate comments with user details
       const updatedPost = await Post.findById(postId)
-        .populate("comments.userId", "username") // Ensure username is populated
-        .lean(); // Convert Mongoose document to plain object
+        .populate("comments.userId", "username profileImg") // Ensure username is populated
+        .lean(); // Convert Mongoose document to plain object, for better optimization
   
+        req.io.emit("postUpdated", { postId, comments: updatedPost.comments });
+
       res.status(201).json(updatedPost.comments);
     } catch (error) {
       console.error("Error adding comment:", error);
