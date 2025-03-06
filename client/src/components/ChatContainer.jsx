@@ -7,6 +7,7 @@ import useThemeStore from '../store/useThemeStore.js'
 const ChatContainer = ({ chatId, onClose, selectedUser, profileImg }) => {
     const { messages, getMessages, sendMessage } = useChatStore();
     const [newMessage, setNewMessage] = useState("");
+    const [expandScreen, setExpandScreen] = useState(false)
     const { authUser } = useAuthStore();
     const messageEndRef = useRef(null)
     const { theme } = useThemeStore()
@@ -30,14 +31,18 @@ const ChatContainer = ({ chatId, onClose, selectedUser, profileImg }) => {
         await sendMessage(chatId, newMessage);
         setNewMessage("");
     };
+
+    const chatScreenSize = () => {
+        setExpandScreen(prev => !prev)
+    }
     
     return (
-        <div className={`${theme === 'dark' ? 'bg-black text-slate-300' : 'bg-white'} fixed bottom-0 sm:bottom-5 right-0 sm:right-5 w-full md:w-96 h-full md:h-[60%] lg:h-[60%] xl:h-[80%] shadow-lg rounded-0 sm:rounded-lg flex flex-col border border-gray-300`}>
+        <div className={`${theme === 'dark' ? 'bg-black text-slate-300' : 'bg-white'} fixed bottom-0 right-0 w-full ${expandScreen ? "md:w-full xl:h-full sm:right-0 rounded-0 sm:bottom-0 md:h-full lg:h-full" : "md:w-96 lg:w-114 xl:w-96 xl:h-[80%] sm:bottom-5 sm:right-5 sm:rounded-lg md:h-[60%] lg:h-[60%]"} h-full shadow-lg flex flex-col border border-gray-300`}>
             {/* Chat Header */}
             <div className={`${theme === 'dark' ? 'bg-black border-b border-slate-700' : 'bg-blue-600'} flex items-center justify-between p-3 text-white rounded-none sm:rounded-t-lg`}>
                 <div className="flex items-center justify-center gap-x-2">
                     <img
-                        src={profileImg}
+                        src={profileImg || '/avatar.png'}
                         alt="User"
                         className="w-6 h-6 object-cover rounded-full border border-gray-300"
                     />
@@ -45,10 +50,17 @@ const ChatContainer = ({ chatId, onClose, selectedUser, profileImg }) => {
                         {selectedUser}
                     </h2>
                 </div>
+
+              <div className="flex items-center justify-center gap-x-3">
+              <button onClick={chatScreenSize} className="hidden sm:inline text-white hover:text-green-400 transition duration-200 text-xl">
+              <i className="fa-solid fa-expand text-2xl cursor-pointer"></i>                
+              </button>
+
                 <button onClick={onClose} className="text-white hover:text-red-500 transition duration-200 text-xl">
                     <i className="fa-solid fa-square-xmark text-2xl cursor-pointer"></i>
 
                 </button>
+              </div>
             </div>
 
             {/* Messages List */}
@@ -63,7 +75,7 @@ const ChatContainer = ({ chatId, onClose, selectedUser, profileImg }) => {
                         >
                             {!isAuthenticatedUser && (
                                 <img
-                                    src={msg.sender.profileImg}
+                                    src={msg.sender.profileImg || '/avatar.png'}
                                     alt="User"
                                     className="w-6 h-6 mt-4 object-cover rounded-full mr-2 border border-gray-300"
                                 />
@@ -81,7 +93,7 @@ const ChatContainer = ({ chatId, onClose, selectedUser, profileImg }) => {
                          </div>
                             {isAuthenticatedUser && (
                                 <img
-                                    src={authUser.profileImg}
+                                    src={authUser.profileImg || '/avatar.png'}
                                     alt="User"
                                     className="w-6 h-6 mt-4 object-cover rounded-full ml-2 border border-gray-300"
                                 />
@@ -97,6 +109,11 @@ const ChatContainer = ({ chatId, onClose, selectedUser, profileImg }) => {
                     type="text"
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                            handleSendMessage();
+                        }
+                    }}
                     placeholder="Type a message..."
                     className={`${theme === 'dark' ? 'text-white' : 'text-black'} flex-1 p-2 border rounded-md outline -outline-offset-1 outline-slate-700 focus:outline-2 focus:-outline-offset-2 focus:outline-blue-400 placeholder:text-slate-700`}
                 />

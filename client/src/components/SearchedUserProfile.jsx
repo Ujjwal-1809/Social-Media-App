@@ -29,7 +29,7 @@ const SearchedUserProfile = ({ onClose, selectedUser }) => {
                 </button>
 
                 {/* User Profile Image */}
-                <img className="w-24 h-24 max-w-24 object-cover border-2 self-center rounded-full shadow-md" src={selectedUser.profileImg} alt="Profile" />
+                <img className="w-24 h-24 aspect-square object-cover border-2 self-center rounded-full shadow-md" src={selectedUser.profileImg || '/avatar.png'} />
 
                 {/* User Info */}
                 <h2 className="text-center font-semibold text-lg">{selectedUser.username}</h2>
