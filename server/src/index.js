@@ -43,7 +43,7 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: "10mb" }));
 app.use(cookieParser());
 app.use(cors({
-    origin: "https://67c8c815ecf7d40008c50e0f--clinquant-daifuku-1623f6.netlify.app",
+    origin: "https://67c9757b2d18ed0008c30048--clinquant-daifuku-1623f6.netlify.app",
     credentials: true
 }));
 
